@@ -1,0 +1,23 @@
+[
+  {
+    "file": "main.c",
+    "arguments": [
+      "avr-gcc",
+      "-mmcu=atmega2560",
+      "-Os",
+      "-std=gnu11",
+      "-fno-fat-lto-objects",
+      "-Wall",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-flto",
+      "-I../include",
+      "-c",
+      "main.c",
+      "-o",
+      "main.o"
+    ],
+    "directory": "/home/skole/Datatek-og-prog/Opgaver/Opgave 3",
+    "output": "main.o"
+  }
+]
