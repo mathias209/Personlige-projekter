@@ -9,6 +9,8 @@
 
 #define W_WIDTH 800
 #define W_HEIGH 600
-#define W_TITLE "tissemand"
+#define W_TITLE "tissemand 3"
+
+#define SHADER_MAX_LENGTH 5000
 
 #endif
