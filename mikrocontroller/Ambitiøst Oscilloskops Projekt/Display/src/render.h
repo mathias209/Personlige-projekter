@@ -14,6 +14,8 @@ uint8_t windowShouldClose();
 GLFWwindow* getGlfwWindow();
 uint8_t initOpenGL();
 void draw();
+void processInput();
 void glCleanUp();
+void drawLine(GLfloat x, GLfloat y);
 
 #endif

@@ -1,9 +1,10 @@
-LDFLAGS=-lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl -Iinclude
+LDFLAGS=-lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl -lm -Iinclude
 CCFLAGS=-Og -std=c23
 
 targets = $(patsubst %.c,%.o,$(wildcard src/*.c))
 libtargets = $(patsubst %.c,%.so,$(wildcard lib/*.c))
 depends = $(patsubst %.c,%.d,$(wildcard src/*.c))
+shaders = $(wildcard src/*.vert src/*.frag)
 
 all: build
 
@@ -22,6 +23,7 @@ bear:
 	bear -- make
 
 main: $(targets) $(libtargets)
+	glslang $(shaders)
 	gcc -o main $(LDFLAGS) $(CCFLAGS) $(targets) $(libtargets)
 
 -include $(depends)

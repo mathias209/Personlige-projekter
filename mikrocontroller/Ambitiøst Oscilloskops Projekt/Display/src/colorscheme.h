@@ -1,0 +1,13 @@
+#ifndef COLORSCHEME_H
+#define COLORSCHEME_H
+
+#include "shared.h"
+
+#define BACK_COLOR BLACK
+#define GRID_COLOR DARKGREY
+#define CURVE1_COLOR YELLOW
+#define CURVE2_COLOR CYAN
+#define CURVE3_COLOR PINK
+#define CURVE4_COLOR BLUE
+
+#endif
