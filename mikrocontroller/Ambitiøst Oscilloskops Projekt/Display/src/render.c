@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <math.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 #include "shared.h"
 #include "colorscheme.h"
@@ -15,33 +17,67 @@ char shaderSrc[SHADER_MAX_LENGTH];
 
 GLFWwindow* window;
 
-float vertices[] = {
+float lineVertices[] = {
      1.0f,  1.0f, 0.0f, // top right
      1.0f, -1.0f, 0.0f, // bottom right
     -1.0f, -1.0f, 0.0f, // bottom left
-    -1.0f,  1.0f, 0.0f
+    -1.0f,  1.0f, 0.0f  // top left
 };
-GLuint indicies[] = {
+GLuint lineIndicies[] = {
     0, 1, 3,
     1, 2, 3
 };
 
-const GLchar vertexShaderSource[] = {
-#embed "shader.vert"
+const GLchar lineVertSrc[] = {
+#embed "line.vert"
     , 0};
-const GLchar fragmentShaderSource[] = {
-#embed "shader.frag"
+const GLchar lineFragSrc[] = {
+#embed "line.frag"
     , 0};
 
-GLuint VAO;
-GLuint VBO;
-GLuint EBO;
-GLuint shaderProgram;
+GLuint lineVAO;
+GLuint lineVBO;
+GLuint lineEBO;
+GLuint lineProgram;
+
+float texVertices[] = {
+     // positions        // texture coords
+     0.5f,  0.5f, 0.0f,  1.0f, 1.0f, // top right
+     0.5f, -0.5f, 0.0f,  1.0f, 0.0f, // bottom right
+    -0.5f, -0.5f, 0.0f,  0.0f, 0.0f, // bottom left
+    -0.5f,  0.5f, 0.0f,  0.0f, 1.0f  // top left
+};
+GLuint texIndicies[] = {
+    0, 1, 3,
+    1, 2, 3
+};
+
+const GLchar texVertSrc[] = {
+#embed "tex.vert"
+    , 0};
+
+const GLchar texFragSrc[] = {
+#embed "tex.frag"
+    , 0};
+
+GLuint texVAO;
+GLuint texVBO;
+GLuint texEBO;
+GLuint texProgram;
+
+unsigned int bitmapFontTex;
 
 typedef struct Point {
     float x;
     float y;
 } Point;
+
+typedef struct Image {
+    unsigned char *data;
+    int with;
+    int height;
+    int nrChannels;
+} Image;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -100,50 +136,50 @@ GLuint createShader(const GLchar* src, GLuint type)
     return shader;
 }
 
-void createShaderProgram()
+void createShaderProgram(unsigned int* program, const char* vertSrc, const char* fragSrc)
 {
     GLuint vertexShader, fragmentShader;
-    vertexShader = createShader(vertexShaderSource, GL_VERTEX_SHADER);
+    vertexShader = createShader(vertSrc, GL_VERTEX_SHADER);
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
     if(!success) {
 	glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
 	printf("Error compiling vertex shader\n%s\n", infoLog);
     }
 
-    fragmentShader = createShader(fragmentShaderSource, GL_FRAGMENT_SHADER);
+    fragmentShader = createShader(fragSrc, GL_FRAGMENT_SHADER);
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
     if(!success) {
 	glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
 	printf("Error compiling fragment shader\n%s\n", infoLog);
     }
 
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    *program = glCreateProgram();
+    glAttachShader(*program, vertexShader);
+    glAttachShader(*program, fragmentShader);
+    glLinkProgram(*program);
+    glGetProgramiv(*program, GL_LINK_STATUS, &success);
     if (!success) {
-	glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+	glGetProgramInfoLog(*program, 512, NULL, infoLog);
 	printf("Error linking shader program: %s\n", infoLog);
     }
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 }
 
-void vertexDataSetup()
+void lineVertexDataSetup()
 {
-    glGenVertexArrays(1, &VAO);
+    glGenVertexArrays(1, &lineVAO);
 
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
+    glGenBuffers(1, &lineVBO);
+    glGenBuffers(1, &lineEBO);
 
-    glBindVertexArray(VAO);
+    glBindVertexArray(lineVAO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(lineVertices), lineVertices, GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indicies), indicies, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lineEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(lineIndicies), lineIndicies, GL_STATIC_DRAW);
 
     // atributes
     GLsizei stride = 3 * sizeof(float);
@@ -155,6 +191,66 @@ void vertexDataSetup()
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
+void texVertexDataSetup()
+{
+    glGenVertexArrays(1, &texVAO);
+
+    glGenBuffers(1, &texVBO);
+    glGenBuffers(1, &texEBO);
+
+    glBindVertexArray(texVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, texVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(texVertices), texVertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, texEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(texIndicies), texIndicies, GL_STATIC_DRAW);
+
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    // texture coord attribute
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    // unbind
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
+
+Image loadImage(char* filename)
+{
+    Image result;
+    result.data = stbi_load(filename, &result.with, &result.height, &result.nrChannels, 0);
+    if (!result.data)
+	printf("failed to load texture %s\n", filename);
+    return result;
+}
+
+void fontTextureSetup()
+{
+    glGenTextures(1, &bitmapFontTex);
+    glBindTexture(GL_TEXTURE_2D, bitmapFontTex);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    float borderColor[4];
+    getColorVec4(C_TRANS, borderColor);
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, TEXT_FILTER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, TEXT_FILTER);
+
+    stbi_set_flip_vertically_on_load(true);
+    // dimensions not power of 2
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    Image textureImage = loadImage(PATH"terminus-u32b.png");
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureImage.with, textureImage.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, textureImage.data);
+    stbi_image_free(textureImage.data);
 }
 
 void setUniform4f(GLuint program, const GLchar* name, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3)
@@ -174,24 +270,24 @@ void drawLine(double x1, double y1, double x2, double y2, float width, int color
     double angle = atan2(y2-y1, x2-x1);
     double transAngle = angle+(PI/2);
     // top left
-    vertices[9] =  x1+width*cos(transAngle)/2.0f;
-    vertices[10] = y1+width*sin(transAngle)/2.0f;
+    lineVertices[9] =  x1+width*cos(transAngle)/2.0f;
+    lineVertices[10] = y1+width*sin(transAngle)/2.0f;
     // bottom left
-    vertices[6] =  x1-width*cos(transAngle)/2.0f;
-    vertices[7] =  y1-width*sin(transAngle)/2.0f;
+    lineVertices[6] =  x1-width*cos(transAngle)/2.0f;
+    lineVertices[7] =  y1-width*sin(transAngle)/2.0f;
     // top right
-    vertices[0] =  x2+width*cos(transAngle)/2.0f;
-    vertices[1] =  y2+width*sin(transAngle)/2.0f;
+    lineVertices[0] =  x2+width*cos(transAngle)/2.0f;
+    lineVertices[1] =  y2+width*sin(transAngle)/2.0f;
     // bottom right
-    vertices[3] =  x2-width*cos(transAngle)/2.0f;
-    vertices[4] =  y2-width*sin(transAngle)/2.0f;
+    lineVertices[3] =  x2-width*cos(transAngle)/2.0f;
+    lineVertices[4] =  y2-width*sin(transAngle)/2.0f;
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(lineVertices), lineVertices, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     Color lineColor = getColor(color);
-    setUniform4f(shaderProgram, "color", lineColor.r, lineColor.g, lineColor.b, 1.0f);
+    setUniform4f(lineProgram, "color", lineColor.r, lineColor.g, lineColor.b, 1.0f);
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
@@ -257,8 +353,8 @@ void draw()
 {
     clearBack();
 
-    glUseProgram(shaderProgram);
-    glBindVertexArray(VAO);
+    glUseProgram(lineProgram);
+    glBindVertexArray(lineVAO);
 
     drawGrid();
 
@@ -276,6 +372,13 @@ void draw()
     }
 
     drawCurve(curve, LENGTH(curve), CURVE_WIDTH, CURVE1_COLOR);
+
+    glBindTexture(GL_TEXTURE_2D, bitmapFontTex);
+    glUseProgram(texProgram);
+    Color textColor = getColor(C_CYAN);
+    setUniform4f(texProgram, "textColor", textColor.r, textColor.g, textColor.b, textColor.a);
+    glBindVertexArray(texVAO);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
 uint8_t initOpenGL()
@@ -284,21 +387,33 @@ uint8_t initOpenGL()
     createWindow(W_WIDTH, W_HEIGH, W_TITLE);
     gladInit();
 
-    createShaderProgram();
-    vertexDataSetup();
+    createShaderProgram(&lineProgram, lineVertSrc, lineFragSrc);
+    lineVertexDataSetup();
+
+    createShaderProgram(&texProgram, texVertSrc, texFragSrc);
+    texVertexDataSetup();
+    fontTextureSetup();
 
     return 0;
 }
 
 void processInput()
 {
+    if(glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+	glfwSetWindowShouldClose(window, 1);
 }
 
 void glCleanUp()
 {
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
-    glDeleteProgram(shaderProgram);
+    glDeleteVertexArrays(1, &lineVAO);
+    glDeleteBuffers(1, &lineVBO);
+    glDeleteBuffers(1, &lineEBO);
+    glDeleteProgram(lineProgram);
+
+    glDeleteVertexArrays(1, &texVAO);
+    glDeleteBuffers(1, &texVBO);
+    glDeleteBuffers(1, &texEBO);
+    glDeleteProgram(texProgram);
+
     glfwTerminate();
 }

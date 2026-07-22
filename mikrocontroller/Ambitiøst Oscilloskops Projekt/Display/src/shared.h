@@ -8,25 +8,28 @@ typedef struct Color {
     float r;
     float g;
     float b;
+    float a;
 } Color;
 
-#define BLACK 0
-#define WHITE 1
-#define RED 2
-#define GREEN 3
-#define BLUE 4
-#define YELLOW 5
-#define PURPLE 6
-#define CYAN 7
-#define LIGHTGREY 8
-#define DARKGREY 9
-#define PINK 10
+#define C_BLACK     0
+#define C_WHITE     1
+#define C_RED       2
+#define C_GREEN     3
+#define C_BLUE      4
+#define C_YELLOW    5
+#define C_PURPLE    6
+#define C_CYAN      7
+#define C_LIGHTGREY 8
+#define C_DARKGREY  9
+#define C_PINK      10
+#define C_TRANS     11
 
 // macros
 #define LENGTH(ARR) sizeof(ARR)/sizeof(ARR[0])
 
 // constants
 #define PI 3.1415926535897932384626433f
+#define PATH "/home/mathias/Personlige-projekter/mikrocontroller/Ambitiøst Oscilloskops Projekt/Display/"
 
 // config
 #define GL_MAJOR 4
@@ -38,6 +41,8 @@ typedef struct Color {
 #define W_TITLE "Oscilloskop"
 
 #define SHADER_MAX_LENGTH 5000
+
+#define TEXT_FILTER GL_NEAREST
 
 #define GRIDH 10
 #define GRIDV 8

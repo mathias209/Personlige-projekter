@@ -4,5 +4,6 @@
 #include "shared.h"
 
 Color getColor(int color);
+void getColorVec4(int color, float* dest);
 
 #endif
