@@ -79,6 +79,14 @@ typedef struct Image {
     int nrChannels;
 } Image;
 
+typedef struct Text {
+    char* text;
+    int size;
+    int color;
+    float origin[2];
+    int length;
+} Text;
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
@@ -259,6 +267,12 @@ void setUniform4f(GLuint program, const GLchar* name, GLfloat v0, GLfloat v1, GL
     glUniform4f(location, v0, v1, v2, v3);
 }
 
+void setUniform3f(GLuint program, const GLchar* name, GLfloat v0, GLfloat v1, GLfloat v2)
+{
+    int location = glGetUniformLocation(program, name);
+    glUniform3f(location, v0, v1, v2);
+}
+
 void setUniform2f(GLuint program, const GLchar* name, GLfloat v0, GLfloat v1)
 {
     int location = glGetUniformLocation(program, name);
@@ -349,6 +363,32 @@ void drawGrid()
     }
 }
 
+void drawText(Text text)
+{
+    glBindTexture(GL_TEXTURE_2D, bitmapFontTex);
+    glUseProgram(texProgram);
+    Color textColor = getColor(text.color);
+    setUniform4f(texProgram, "textColor", textColor.r, textColor.g, textColor.b, textColor.a);
+    setUniform2f(texProgram, "texScale", 1/FONT_TEX_WIDTH, 1/FONT_TEX_HEIGHT);
+
+    // 16x32 and textsize is amount of points tall
+    float width = TEXT_POINT*text.size/2;
+    float height = TEXT_POINT*text.size;
+    float x = text.origin[0];
+    float y = text.origin[1];
+
+    for (int i = 0; i<text.length; i++) {
+	setUniform3f(texProgram, "translate", x, y, 1.0f);
+	setUniform3f(texProgram, "scale", width, height, 1.0f);
+
+	setUniform2f(texProgram, "texTranslate", ((text.text[i]-' ') % (int)FONT_TEX_WIDTH)*1.0f/FONT_TEX_WIDTH, 1.0f - (((text.text[i]-' ')/(int)FONT_TEX_WIDTH)+1)*1.0f/FONT_TEX_HEIGHT);
+
+	glBindVertexArray(texVAO);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	x+=width;
+    }
+}
+
 void draw()
 {
     clearBack();
@@ -373,12 +413,8 @@ void draw()
 
     drawCurve(curve, LENGTH(curve), CURVE_WIDTH, CURVE1_COLOR);
 
-    glBindTexture(GL_TEXTURE_2D, bitmapFontTex);
-    glUseProgram(texProgram);
-    Color textColor = getColor(C_CYAN);
-    setUniform4f(texProgram, "textColor", textColor.r, textColor.g, textColor.b, textColor.a);
-    glBindVertexArray(texVAO);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    Text test = {"tissemand!!&&~ 32", 24, C_PINK, {-0.9f, 0.0f}, 17};
+    drawText(test);
 }
 
 uint8_t initOpenGL()

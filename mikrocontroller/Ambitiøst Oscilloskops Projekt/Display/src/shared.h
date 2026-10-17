@@ -43,6 +43,9 @@ typedef struct Color {
 #define SHADER_MAX_LENGTH 5000
 
 #define TEXT_FILTER GL_NEAREST
+#define TEXT_POINT 0.005
+#define FONT_TEX_WIDTH 16.0f
+#define FONT_TEX_HEIGHT 6.0f
 
 #define GRIDH 10
 #define GRIDV 8
