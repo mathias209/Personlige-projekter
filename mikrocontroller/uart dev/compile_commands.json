@@ -1,0 +1,23 @@
+[
+  {
+    "file": "../lib/uart.c",
+    "arguments": [
+      "/home/mathias/.platformio/packages/toolchain-atmelavr/bin/avr-gcc",
+      "-mmcu=atmega2560",
+      "-Os",
+      "-std=gnu11",
+      "-fno-fat-lto-objects",
+      "-Wall",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-flto",
+      "-I../include",
+      "-c",
+      "../lib/uart.c",
+      "-o",
+      "../lib/uart.so"
+    ],
+    "directory": "/home/mathias/Personlige-projekter/mikrocontroller/uart dev",
+    "output": "../lib/uart.so"
+  }
+]
