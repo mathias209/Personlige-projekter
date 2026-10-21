@@ -9,11 +9,17 @@
 #define MAXPATH 200
 
 #define OUTFILE "/tmp/pdfman-tempfile"
+// home gets prepended in main
 #define DATAPATH "/.local/share/pdfman"
+#define DBNAME "db"
 
-#define HELPMES "-h\n\tPrint this help message\n-a CATEGORY\n\tAdd category of name CATEGORY\n-d CATEGORY\n\tDelete category of name CATEGORY\n-f CATEGORY PATH\n\tAdd file in PATH to CATEGORY\n-x CATEGORY FILE\n\tDelete file from list\n-l CATEGORY\n\tList files in CATEGORY, list tree if no category is given\n-o CATEGORY FILE\n\tOpens file, uses dmenu if no options are given\n"
+#define HELPMES "-h\n\tPrint this help message\n-a CATEGORY PATH/s\n\tAdd file in PATH/s to CATEGORY\n-d CATEGORY FILE/s\n\tDelete file from list\n-l CATEGORY\n\tList files in CATEGORY, list tree if no category is given\n-o CATEGORY FILE\n\tOpens file, uses dmenu if no options are given\n-c CATEGORY\n\tClear all files in CATEGORY or everything if no option is given"
+
+#define DELIM "|"
 
 struct stat stbuf = {0};
+
+char dbpath[MAXPATH];
 
 void runcommand(char* dest, char* command) {
     int error;
@@ -36,20 +42,28 @@ void runcommand(char* dest, char* command) {
     fclose(f);
 }
 
-void addCat(int argc, char* argv[]);
-void delCat(int argc, char* argv[]);
-void addFile(int argc, char* argv[]);
+void addFile(int argc, char* argv[]) {
+    if (argc < 4) {
+	printf("Error: Too few arguments to add a file, see -h\n");
+	return;
+    }
+    FILE* f = fopen(dbpath, "a");
+    for (int i = 3; i<argc; i++) {
+	fprintf(f, "%s"DELIM"%s\n", argv[2], argv[i]);
+    }
+    fclose(f);
+}
 void delFile(int argc, char* argv[]);
 void list(int argc, char* argv[]);
 void open(int argc, char* argv[]);
+void clear(char* category);
 
 int main(int argc, char* argv[]) {
     // database file and dir
-    char path[MAXPATH];
-    runcommand(path, "echo -n $HOME");
-    strcat(path, DATAPATH);
-    if (stat(path, &stbuf) == -1) {
-	printf("pdfman requires a database, which will be created in %s. Is this acceptable? [y/n]\n", path);
+    runcommand(dbpath, "echo -n $HOME");
+    strcat(dbpath, DATAPATH);
+    if (stat(dbpath, &stbuf) == -1) {
+	printf("pdfman requires a database, which will be created in %s. Is this acceptable? [y/n]\n", dbpath);
 	if (getchar() == 'y') {
 	    system("mkdir ~"DATAPATH);
 	    printf("Directory has been created, continuing...\n");
@@ -58,15 +72,12 @@ int main(int argc, char* argv[]) {
 	    return 0;
 	}
     }
+    strcat(dbpath, "/"DBNAME);
 
     if (argc == 1)
 	printf(HELPMES);
-	//    else if (argv[1] == "-a")
-	// addCat(argc, argv);
-	//    else if (argv[1] == "-d")
-	// delCat(argc, argv);
-	//    else if (argv[1] == "-f")
-	// addFile(argc, argv);
+    else if (strcmp(argv[1], "-a")==0)
+	addFile(argc, argv);
 	//    else if (argv[1] == "-x")
 	// delFile(argc, argv);
 	//    else if (argv[1] == "-l")
