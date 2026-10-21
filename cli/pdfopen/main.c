@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #define MAXOUT 1000
+#define MAXIN 1000
 #define MAXCOMMAND 100
 #define MAXPATH 200
 
@@ -42,6 +43,22 @@ void runcommand(char* dest, char* command) {
     fclose(f);
 }
 
+void delLines(char* file)
+{
+    char buf[MAXIN];
+    char* bufptr = buf;
+    FILE* f = fopen(file, "r");
+    char c;
+    while ((c = getc(f)) != EOF) {
+	*(bufptr++) = c;
+	if ((bufptr-buf) == MAXIN) {
+	    printf("Warning: INput file too large stopping at %d\n", MAXIN);
+	    break;
+	}
+    }
+    
+}
+
 void addFile(int argc, char* argv[]) {
     if (argc < 4) {
 	printf("Error: Too few arguments to add a file, see -h\n");
@@ -74,18 +91,20 @@ int main(int argc, char* argv[]) {
     }
     strcat(dbpath, "/"DBNAME);
 
-    if (argc == 1)
-	printf(HELPMES);
-    else if (strcmp(argv[1], "-a")==0)
-	addFile(argc, argv);
-	//    else if (argv[1] == "-x")
-	// delFile(argc, argv);
-	//    else if (argv[1] == "-l")
-	// list(argc, argv);
-	//    else if (argv[1] == "-o")
-	// open(argc, argv);
-    else
-	printf("Error: Incorrect option, %s, try -h\n", argv[1]);
+    delLines("test.txt");
+
+	//    if (argc == 1)
+	// printf(HELPMES);
+	//    else if (strcmp(argv[1], "-a")==0)
+	// addFile(argc, argv);
+	// //    else if (argv[1] == "-x")
+	// // delFile(argc, argv);
+	// //    else if (argv[1] == "-l")
+	// // list(argc, argv);
+	// //    else if (argv[1] == "-o")
+	// // open(argc, argv);
+	//    else
+	// printf("Error: Incorrect option, %s, try -h\n", argv[1]);
 
     return 0;
 }
