@@ -5,7 +5,7 @@
 #include <unistd.h>
 
 #define MAXOUT 1000
-#define MAXIN 1000
+#define MAXBUF 1000
 #define MAXCOMMAND 100
 #define MAXPATH 200
 
@@ -43,20 +43,37 @@ void runcommand(char* dest, char* command) {
     fclose(f);
 }
 
-void delLines(char* file)
+void delLines(char* file, int nlines, char* lines[])
 {
-    char buf[MAXIN];
+    char buf[MAXBUF];
     char* bufptr = buf;
     FILE* f = fopen(file, "r");
     char c;
     while ((c = getc(f)) != EOF) {
 	*(bufptr++) = c;
-	if ((bufptr-buf) == MAXIN) {
-	    printf("Warning: INput file too large stopping at %d\n", MAXIN);
+	if ((bufptr-buf) == MAXBUF) {
+	    printf("Warning: Input file too large stopping at %d\n", MAXBUF);
 	    break;
 	}
     }
-    
+    fclose(f);
+
+    f = fopen("testout.txt", "a");
+    int writeline = 1;
+    char* lineptr;
+    lineptr = strtok(buf, "\n");
+    do {
+	writeline = 1;
+	for (int i = 0; i<nlines; i++) {
+	    if (strcmp(lineptr, lines[i]) == 0) {
+		writeline = 0;
+	    }
+	}
+	if (writeline)
+	    fprintf(f, "%s\n", lineptr);
+    } while ((lineptr = strtok(NULL, "\n")) != NULL);
+
+    fclose(f);
 }
 
 void addFile(int argc, char* argv[]) {
@@ -90,8 +107,6 @@ int main(int argc, char* argv[]) {
 	}
     }
     strcat(dbpath, "/"DBNAME);
-
-    delLines("test.txt");
 
 	//    if (argc == 1)
 	// printf(HELPMES);
